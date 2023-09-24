@@ -1,0 +1,15 @@
+[package]
+name = "expander"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+regex = "1.9.5"
+tokio = { version = "1.32.0", features = ["full"] }
+twilight-cache-inmemory = "0.15.4"
+twilight-gateway = "0.15.4"
+twilight-http = "0.15.4"
+twilight-model = "0.15.4"
+twilight-util = { version = "0.15.4", features = ["builder"] }
