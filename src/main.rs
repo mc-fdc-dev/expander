@@ -1,3 +1,4 @@
+use dotenv::dotenv;
 use regex::Regex;
 use std::{env, error::Error, sync::Arc};
 use twilight_cache_inmemory::InMemoryCache;
@@ -5,15 +6,15 @@ use twilight_gateway::{Event, Intents, Shard, ShardId};
 use twilight_http::Client as HttpClient;
 use twilight_model::{
     id::{
-        marker::{ChannelMarker, UserMarker},
+        marker::{ChannelMarker, MessageMarker, UserMarker},
         Id,
     },
-    util::ImageHash,
+    util::{ImageHash, Timestamp},
 };
-use twilight_util::builder::embed::{
-    EmbedAuthorBuilder, EmbedBuilder, EmbedFooterBuilder, ImageSource,
+use twilight_util::{
+    builder::embed::{EmbedAuthorBuilder, EmbedBuilder, EmbedFooterBuilder, ImageSource},
+    snowflake::Snowflake,
 };
-use dotenv::dotenv;
 
 struct ClientData {
     re: Regex,
@@ -29,6 +30,7 @@ struct MessageData {
     content: String,
     author_id: Id<UserMarker>,
     channel_name: String,
+    id: Id<MessageMarker>,
 }
 
 struct Author {
@@ -103,6 +105,7 @@ async fn handle_event(
                             content: message.content().clone().to_string(),
                             author_id: message.author(),
                             channel_name: channel.name.clone().unwrap(),
+                            id: message.id(),
                         })
                     } else {
                         let message = client.http.message(channel, Id::new(message_id)).await;
@@ -113,6 +116,7 @@ async fn handle_event(
                                 content: target.content.clone().to_string(),
                                 author_id: target.author.id,
                                 channel_name: channel.name.clone().unwrap(),
+                                id: target.id,
                             })
                         } else {
                             None
@@ -152,6 +156,7 @@ async fn handle_event(
                     )
                     .footer(EmbedFooterBuilder::new(target.channel_name).build())
                     .color(0x02caf7)
+                    .timestamp(Timestamp::from_micros(target.id.timestamp() * 1000)?)
                     .build();
 
                 client
