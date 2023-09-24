@@ -131,7 +131,7 @@ async fn handle_event(
 
                 client
                     .http
-                    .create_message(channel)
+                    .create_message(msg.channel_id)
                     .embeds(&[embed])?
                     .await?;
             }
