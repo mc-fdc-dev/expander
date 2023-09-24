@@ -126,6 +126,7 @@ async fn handle_event(
                         EmbedFooterBuilder::new(target.channel_name)
                             .build()
                     )
+                    .color(0x02caf7)
                     .build();
 
                 client
