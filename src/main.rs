@@ -3,11 +3,16 @@ use std::{env, error::Error, sync::Arc};
 use twilight_cache_inmemory::{InMemoryCache, ResourceType};
 use twilight_gateway::{Event, Intents, Shard, ShardId};
 use twilight_http::Client as HttpClient;
-use twilight_model::id::{
-    marker::{ChannelMarker, UserMarker},
-    Id,
+use twilight_model::{
+    id::{
+        marker::{ChannelMarker, UserMarker},
+        Id,
+    },
+    util::ImageHash,
 };
-use twilight_util::builder::embed::{EmbedAuthorBuilder, EmbedFooterBuilder, EmbedBuilder, ImageSource};
+use twilight_util::builder::embed::{
+    EmbedAuthorBuilder, EmbedBuilder, EmbedFooterBuilder, ImageSource,
+};
 
 struct ClientData {
     re: Regex,
@@ -25,6 +30,12 @@ struct MessageData {
     channel_name: String,
 }
 
+struct Author {
+    name: String,
+    id: Id<UserMarker>,
+    avatar: Option<ImageHash>,
+}
+
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     let token = env::var("DISCORD_TOKEN")?;
@@ -39,7 +50,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
 
     let cache = Arc::new(
         InMemoryCache::builder()
-            .resource_types(ResourceType::MESSAGE | ResourceType::USER | ResourceType::CHANNEL)
+            // .resource_types(ResourceType::MESSAGE | ResourceType::MEMBER | ResourceType::CHANNEL)
             .build(),
     );
     let client = Arc::new(Client {
@@ -107,7 +118,22 @@ async fn handle_event(
                     }
                 };
                 let target = message.unwrap();
-                let author = client.cache.user(target.author_id).unwrap();
+                let author = {
+                    if let Some(user) = client.cache.user(target.author_id) {
+                        Author {
+                            name: user.name.clone(),
+                            id: user.id,
+                            avatar: user.avatar,
+                        }
+                    } else {
+                        let user = client.http.user(target.author_id).await?.model().await?;
+                        Author {
+                            name: user.name.clone(),
+                            id: user.id,
+                            avatar: user.avatar,
+                        }
+                    }
+                };
                 let avatar_url = {
                     format!(
                         "https://cdn.discordapp.com/avatars/{}/{}.png",
@@ -122,10 +148,7 @@ async fn handle_event(
                             .icon_url(ImageSource::url(avatar_url).unwrap())
                             .build(),
                     )
-                    .footer(
-                        EmbedFooterBuilder::new(target.channel_name)
-                            .build()
-                    )
+                    .footer(EmbedFooterBuilder::new(target.channel_name).build())
                     .color(0x02caf7)
                     .build();
 
