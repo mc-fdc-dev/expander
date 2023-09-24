@@ -29,7 +29,7 @@ struct MessageData {
 async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     let token = env::var("DISCORD_TOKEN")?;
     let intents = Intents::GUILD_MESSAGES
-        | Intents::DIRECT_MESSAGES
+        | Intents::GUILDS
         | Intents::MESSAGE_CONTENT
         | Intents::GUILD_MEMBERS;
 
@@ -39,7 +39,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
 
     let cache = Arc::new(
         InMemoryCache::builder()
-            .resource_types(ResourceType::MESSAGE | ResourceType::USER | ResourceType::GUILD)
+            .resource_types(ResourceType::MESSAGE | ResourceType::USER | ResourceType::CHANNEL)
             .build(),
     );
     let client = Arc::new(Client {
