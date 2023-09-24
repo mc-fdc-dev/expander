@@ -13,6 +13,7 @@ use twilight_model::{
 use twilight_util::builder::embed::{
     EmbedAuthorBuilder, EmbedBuilder, EmbedFooterBuilder, ImageSource,
 };
+use dotenv::dotenv;
 
 struct ClientData {
     re: Regex,
@@ -38,6 +39,7 @@ struct Author {
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
+    dotenv().ok();
     let token = env::var("DISCORD_TOKEN")?;
     let intents = Intents::GUILD_MESSAGES
         | Intents::GUILDS
