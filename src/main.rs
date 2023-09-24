@@ -103,7 +103,7 @@ async fn handle_event(
                     if let Some(message) = client.cache.message(Id::new(message_id)) {
                         let channel = client.cache.channel(channel).unwrap();
                         let mut image = None;
-                        if message.attachments() == vec![] {
+                        if message.attachments().len() != 0 {
                             image = Some(message.attachments()[0].url.clone());
                         }
                         Some(MessageData {
@@ -119,7 +119,7 @@ async fn handle_event(
                             let target = message.model().await?;
                             let channel = client.cache.channel(channel).unwrap();
                             let mut image = None;
-                            if target.attachments != vec![] {
+                            if target.attachments.len() != 0 {
                                 image = Some(target.attachments[0].url.clone());
                             }
                             Some(MessageData {
