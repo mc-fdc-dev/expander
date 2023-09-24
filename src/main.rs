@@ -31,6 +31,7 @@ struct MessageData {
     author_id: Id<UserMarker>,
     channel_name: String,
     id: Id<MessageMarker>,
+    image: Option<String>,
 }
 
 struct Author {
@@ -101,22 +102,32 @@ async fn handle_event(
                 let message: Option<MessageData> = {
                     if let Some(message) = client.cache.message(Id::new(message_id)) {
                         let channel = client.cache.channel(channel).unwrap();
+                        let mut image = None;
+                        if message.attachments() == vec![] {
+                            image = Some(message.attachments()[0].url.clone());
+                        }
                         Some(MessageData {
                             content: message.content().clone().to_string(),
                             author_id: message.author(),
                             channel_name: channel.name.clone().unwrap(),
                             id: message.id(),
+                            image,
                         })
                     } else {
                         let message = client.http.message(channel, Id::new(message_id)).await;
                         if let Ok(message) = message {
                             let target = message.model().await?;
                             let channel = client.cache.channel(channel).unwrap();
+                            let mut image = None;
+                            if target.attachments != vec![] {
+                                image = Some(target.attachments[0].url.clone());
+                            }
                             Some(MessageData {
                                 content: target.content.clone().to_string(),
                                 author_id: target.author.id,
                                 channel_name: channel.name.clone().unwrap(),
                                 id: target.id,
+                                image,
                             })
                         } else {
                             None
@@ -147,7 +158,7 @@ async fn handle_event(
                         author.avatar.as_ref().unwrap()
                     )
                 };
-                let embed = EmbedBuilder::new()
+                let mut embed = EmbedBuilder::new()
                     .description(target.content)
                     .author(
                         EmbedAuthorBuilder::new(author.name.clone())
@@ -156,8 +167,11 @@ async fn handle_event(
                     )
                     .footer(EmbedFooterBuilder::new(target.channel_name).build())
                     .color(0x02caf7)
-                    .timestamp(Timestamp::from_micros(target.id.timestamp() * 1000)?)
-                    .build();
+                    .timestamp(Timestamp::from_micros(target.id.timestamp() * 1000)?);
+                if let Some(image) = target.image {
+                    embed = embed.image(ImageSource::url(image).unwrap());
+                };
+                let embed = embed.build();
 
                 client
                     .http
