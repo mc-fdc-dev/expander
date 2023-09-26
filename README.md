@@ -1,7 +1,7 @@
 # expander
 
 ## Environment variables
-- DISCORD_TOKEN - Discord token
+- `DISCORD_TOKEN` - Discord token
 
 ## Compile bot
 ```bash
