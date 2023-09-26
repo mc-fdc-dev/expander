@@ -62,7 +62,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
         http: Arc::clone(&http),
         cache: Arc::clone(&cache),
         data: Arc::new(ClientData {
-            re: Regex::new(r"https://discord(app)?.com/channels/(\d+)/(\d+)/(\d+)").unwrap(),
+            re: Regex::new(r"https://(canary)?.discord(app)?.com/channels/(\d+)/(\d+)/(\d+)").unwrap(),
         }),
     });
 
