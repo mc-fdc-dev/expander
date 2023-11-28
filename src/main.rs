@@ -1,4 +1,3 @@
-use dotenv::dotenv;
 use regex::Regex;
 use std::{error::Error, sync::Arc};
 use twilight_cache_inmemory::InMemoryCache;
@@ -45,7 +44,6 @@ struct Author {
 async fn main(
     #[shuttle_secrets::Secrets] secret_store: SecretStore,
 ) -> Result<BotService, shuttle_runtime::Error> {
-    dotenv().ok();
     let token = secret_store.get("DISCORD_TOKEN").unwrap();
 
     let intents = Intents::GUILD_MESSAGES
