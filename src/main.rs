@@ -15,6 +15,7 @@ use twilight_util::{
     builder::embed::{EmbedAuthorBuilder, EmbedBuilder, EmbedFooterBuilder, ImageSource},
     snowflake::Snowflake,
 };
+use shuttle_secrets::SecretStore;
 
 struct ClientData {
     re: Regex,
@@ -41,9 +42,12 @@ struct Author {
 }
 
 #[shuttle_runtime::main]
-async fn main() -> Result<BotService, shuttle_runtime::Error> {
+async fn main(
+    #[shuttle_secrets::Secrets] secret_store: SecretStore,
+) -> Result<BotService, shuttle_runtime::Error> {
     dotenv().ok();
-    let token = env::var("DISCORD_TOKEN").unwrap();
+    let token = secret_store.get("DISCORD_TOKEN").unwrap();
+
     let intents = Intents::GUILD_MESSAGES
         | Intents::GUILDS
         | Intents::MESSAGE_CONTENT
@@ -117,7 +121,7 @@ async fn handle_event(
                             image = Some(message.attachments()[0].url.clone());
                         }
                         Some(MessageData {
-                            content: message.content().clone().to_string(),
+                            content: message.content().to_string(),
                             author_id: message.author(),
                             channel_name: channel.name.clone().unwrap(),
                             id: message.id(),
