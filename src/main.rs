@@ -40,16 +40,16 @@ struct Author {
     avatar: Option<ImageHash>,
 }
 
-#[tokio::main]
-async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
+#[shuttle_runtime::main]
+async fn main() -> Result<BotService, shuttle_runtime::Error> {
     dotenv().ok();
-    let token = env::var("DISCORD_TOKEN")?;
+    let token = env::var("DISCORD_TOKEN").unwrap();
     let intents = Intents::GUILD_MESSAGES
         | Intents::GUILDS
         | Intents::MESSAGE_CONTENT
         | Intents::GUILD_MEMBERS;
 
-    let mut shard = Shard::new(ShardId::ONE, token.clone(), intents);
+    let shard = Shard::new(ShardId::ONE, token.clone(), intents);
 
     let http = Arc::new(HttpClient::new(token));
 
@@ -65,23 +65,34 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
         }),
     });
 
-    loop {
-        let event = match shard.next_event().await {
-            Ok(event) => event,
-            Err(source) => {
-                if source.is_fatal() {
-                    break;
+    Ok(BotService { shard, client })
+}
+
+struct BotService {
+    shard: Shard,
+    client: Arc<Client>,
+}
+
+#[shuttle_runtime::async_trait]
+impl shuttle_runtime::Service for BotService {
+    async fn bind(mut self, _addr: std::net::SocketAddr) -> Result<(), shuttle_runtime::Error> {
+        loop {
+            let event = match self.shard.next_event().await {
+                Ok(event) => event,
+                Err(source) => {
+                    if source.is_fatal() {
+                        break;
+                    }
+    
+                    continue;
                 }
-
-                continue;
-            }
-        };
-        cache.update(&event);
-
-        tokio::spawn(handle_event(event, Arc::clone(&client)));
+            };
+            self.client.cache.update(&event);
+    
+            tokio::spawn(handle_event(event, Arc::clone(&self.client)));
+        }
+        Ok(())
     }
-
-    Ok(())
 }
 
 async fn handle_event(
