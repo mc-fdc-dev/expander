@@ -1,6 +1,6 @@
 use dotenv::dotenv;
 use regex::Regex;
-use std::{env, error::Error, sync::Arc};
+use std::{error::Error, sync::Arc};
 use twilight_cache_inmemory::InMemoryCache;
 use twilight_gateway::{Event, Intents, Shard, ShardId};
 use twilight_http::Client as HttpClient;
