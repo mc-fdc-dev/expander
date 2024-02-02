@@ -99,11 +99,11 @@ async fn handle_event(
                     if let Some(message) = client.cache.message(Id::new(message_id)) {
                         let channel = client.cache.channel(channel).unwrap();
                         let mut image = None;
-                        if message.attachments().len() != 0 {
+                        if !message.attachments().is_empty() {
                             image = Some(message.attachments()[0].url.clone());
                         }
                         Some(MessageData {
-                            content: message.content().clone().to_string(),
+                            content: message.content().to_string(),
                             author_id: message.author(),
                             channel_name: channel.name.clone().unwrap(),
                             id: message.id(),
@@ -115,7 +115,7 @@ async fn handle_event(
                             let target = message.model().await?;
                             let channel = client.cache.channel(channel).unwrap();
                             let mut image = None;
-                            if target.attachments.len() != 0 {
+                            if !target.attachments.is_empty() {
                                 image = Some(target.attachments[0].url.clone());
                             }
                             Some(MessageData {
