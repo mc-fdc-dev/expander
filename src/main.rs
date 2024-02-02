@@ -42,6 +42,7 @@ struct Author {
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
+    println!("Booting expander...");
     dotenv().ok();
     let token = env::var("DISCORD_TOKEN")?;
     let intents = Intents::GUILD_MESSAGES
