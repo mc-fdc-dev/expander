@@ -66,7 +66,7 @@ async fn main() -> anyhow::Result<()> {
 
     let cache = Arc::new(InMemoryCache::builder().build());
     let client = Arc::new(Client {
-        http: http,
+        http,
         cache: Arc::clone(&cache),
         data: ClientData {
             re: Regex::new(r"https://discord(app)?.com/channels/(\d+)/(\d+)/(\d+)").unwrap(),
