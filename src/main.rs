@@ -210,7 +210,7 @@ async fn handle_event(event: Event, client: Arc<Client>) -> anyhow::Result<()> {
                         secrets: None,
                         state: None,
                         timestamps: None,
-                        url: Some("https://github.com/mc-fdc-dev/expander".to_string()),
+                        url: None,
                     }],
                     false,
                     None,
