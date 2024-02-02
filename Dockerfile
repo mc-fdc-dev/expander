@@ -12,7 +12,7 @@ FROM alpine
 
 WORKDIR /src/app
 
-RUN apk add ca-certification
+RUN apk add ca-certificates
 COPY --from=builder /src/builder/target/aarch64-unknown-linux-musl/release/expander .
 
 CMD ["./expander"]
