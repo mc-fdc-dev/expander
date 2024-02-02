@@ -1,10 +1,15 @@
 use dotenvy::dotenv;
 use regex::Regex;
-use std::{env, error::Error, sync::Arc};
+use std::{env, sync::Arc};
+use tokio::sync::RwLock;
 use twilight_cache_inmemory::InMemoryCache;
 use twilight_gateway::{Event, Intents, Shard, ShardId};
 use twilight_http::Client as HttpClient;
 use twilight_model::{
+    gateway::{
+        payload::outgoing::UpdatePresence,
+        presence::{Activity, ActivityType, Status},
+    },
     id::{
         marker::{ChannelMarker, MessageMarker, UserMarker},
         Id,
@@ -21,9 +26,10 @@ struct ClientData {
 }
 
 struct Client {
-    http: Arc<HttpClient>,
+    http: HttpClient,
     cache: Arc<InMemoryCache>,
-    data: Arc<ClientData>,
+    data: ClientData,
+    shard: Arc<RwLock<Shard>>,
 }
 
 struct MessageData {
@@ -41,7 +47,7 @@ struct Author {
 }
 
 #[tokio::main]
-async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
+async fn main() -> anyhow::Result<()> {
     println!("Booting expander...");
     dotenv().ok();
     let token = env::var("DISCORD_TOKEN")?;
@@ -50,20 +56,26 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
         | Intents::MESSAGE_CONTENT
         | Intents::GUILD_MEMBERS;
 
-    let mut shard = Shard::new(ShardId::ONE, token.clone(), intents);
+    let shard = Arc::new(tokio::sync::RwLock::new(Shard::new(
+        ShardId::ONE,
+        token.clone(),
+        intents,
+    )));
 
-    let http = Arc::new(HttpClient::new(token));
+    let http = HttpClient::new(token);
 
     let cache = Arc::new(InMemoryCache::builder().build());
     let client = Arc::new(Client {
-        http: Arc::clone(&http),
+        http: http,
         cache: Arc::clone(&cache),
-        data: Arc::new(ClientData {
+        data: ClientData {
             re: Regex::new(r"https://discord(app)?.com/channels/(\d+)/(\d+)/(\d+)").unwrap(),
-        }),
+        },
+        shard: Arc::clone(&shard),
     });
 
     loop {
+        let mut shard = shard.write().await;
         let event = match shard.next_event().await {
             Ok(event) => event,
             Err(source) => {
@@ -82,10 +94,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     Ok(())
 }
 
-async fn handle_event(
-    event: Event,
-    client: Arc<Client>,
-) -> Result<(), Box<dyn Error + Send + Sync>> {
+async fn handle_event(event: Event, client: Arc<Client>) -> anyhow::Result<()> {
     match event {
         Event::MessageCreate(msg) => {
             if msg.author.bot {
@@ -180,6 +189,34 @@ async fn handle_event(
         }
         Event::Ready(_) => {
             println!("Shard is ready");
+            client
+                .shard
+                .write()
+                .await
+                .command(&UpdatePresence::new(
+                    vec![Activity {
+                        application_id: None,
+                        assets: None,
+                        buttons: Vec::new(),
+                        created_at: None,
+                        details: None,
+                        emoji: None,
+                        flags: None,
+                        id: None,
+                        instance: None,
+                        kind: ActivityType::Watching,
+                        name: format!("v{}", std::env!("CARGO_PKG_VERSION")),
+                        party: None,
+                        secrets: None,
+                        state: None,
+                        timestamps: None,
+                        url: Some("https://github.com/mc-fdc-dev/expander".to_string()),
+                    }],
+                    false,
+                    None,
+                    Status::Online,
+                )?)
+                .await?;
         }
         _ => {}
     }
