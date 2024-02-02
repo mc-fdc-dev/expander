@@ -1,0 +1,7 @@
+version: "3"
+
+services:
+  expander:
+    build: .
+    env_file:
+    - ./.env
