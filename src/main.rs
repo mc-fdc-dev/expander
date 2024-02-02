@@ -53,10 +53,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
 
     let http = Arc::new(HttpClient::new(token));
 
-    let cache = Arc::new(
-        InMemoryCache::builder()
-            .build(),
-    );
+    let cache = Arc::new(InMemoryCache::builder().build());
     let client = Arc::new(Client {
         http: Arc::clone(&http),
         cache: Arc::clone(&cache),
