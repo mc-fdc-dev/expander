@@ -7,7 +7,7 @@ RUN rustup target add aarch64-unknown-linux-musl
 
 COPY . .
 RUN --mount=type=cache,target=/src/builder/target/ cargo build --target=aarch64-unknown-linux-musl --release && \
-  cp target/release/expander /tmp/expander
+  cp target/aarch-unknown-linux-musl/release/expander /tmp/expander
 
 FROM alpine
 
