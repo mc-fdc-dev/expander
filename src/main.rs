@@ -1,4 +1,4 @@
-use dotenv::dotenv;
+use dotenvy::dotenv;
 use regex::Regex;
 use std::{env, error::Error, sync::Arc};
 use twilight_cache_inmemory::InMemoryCache;
@@ -131,50 +131,51 @@ async fn handle_event(
                         }
                     }
                 };
-                let target = message.unwrap();
-                let author = {
-                    if let Some(user) = client.cache.user(target.author_id) {
-                        Author {
-                            name: user.name.clone(),
-                            id: user.id,
-                            avatar: user.avatar,
+                if let Some(target) = message {
+                    let author = {
+                        if let Some(user) = client.cache.user(target.author_id) {
+                            Author {
+                                name: user.name.clone(),
+                                id: user.id,
+                                avatar: user.avatar,
+                            }
+                        } else {
+                            let user = client.http.user(target.author_id).await?.model().await?;
+                            Author {
+                                name: user.name.clone(),
+                                id: user.id,
+                                avatar: user.avatar,
+                            }
                         }
-                    } else {
-                        let user = client.http.user(target.author_id).await?.model().await?;
-                        Author {
-                            name: user.name.clone(),
-                            id: user.id,
-                            avatar: user.avatar,
-                        }
-                    }
-                };
-                let avatar_url = {
-                    format!(
-                        "https://cdn.discordapp.com/avatars/{}/{}.png",
-                        author.id,
-                        author.avatar.as_ref().unwrap()
-                    )
-                };
-                let mut embed = EmbedBuilder::new()
-                    .description(target.content)
-                    .author(
-                        EmbedAuthorBuilder::new(author.name.clone())
-                            .icon_url(ImageSource::url(avatar_url).unwrap())
-                            .build(),
-                    )
-                    .footer(EmbedFooterBuilder::new(target.channel_name).build())
-                    .color(0x02caf7)
-                    .timestamp(Timestamp::from_micros(target.id.timestamp() * 1000)?);
-                if let Some(image) = target.image {
-                    embed = embed.image(ImageSource::url(image).unwrap());
-                };
-                let embed = embed.build();
+                    };
+                    let avatar_url = {
+                        format!(
+                            "https://cdn.discordapp.com/avatars/{}/{}.png",
+                            author.id,
+                            author.avatar.as_ref().unwrap()
+                        )
+                    };
+                    let mut embed = EmbedBuilder::new()
+                        .description(target.content)
+                        .author(
+                            EmbedAuthorBuilder::new(author.name.clone())
+                                .icon_url(ImageSource::url(avatar_url).unwrap())
+                                .build(),
+                        )
+                        .footer(EmbedFooterBuilder::new(target.channel_name).build())
+                        .color(0x02caf7)
+                        .timestamp(Timestamp::from_micros(target.id.timestamp() * 1000)?);
+                    if let Some(image) = target.image {
+                        embed = embed.image(ImageSource::url(image).unwrap());
+                    };
+                    let embed = embed.build();
 
-                client
-                    .http
-                    .create_message(msg.channel_id)
-                    .embeds(&[embed])?
-                    .await?;
+                    client
+                        .http
+                        .create_message(msg.channel_id)
+                        .embeds(&[embed])?
+                        .await?;
+                };
             }
         }
         Event::Ready(_) => {
