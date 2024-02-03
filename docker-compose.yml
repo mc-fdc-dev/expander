@@ -3,7 +3,7 @@ version: "3"
 services:
   expander:
     build: .
-    image: ghcr.io/mc-fdc-dev/expander
+    # image: ghcr.io/mc-fdc-dev/expander
     env_file:
     - ./.env
     restart: always
