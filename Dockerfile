@@ -19,7 +19,9 @@ COPY . .
 RUN --mount=type=cache,target=/src/builder/target/ cargo build --target=$(cat /tmp/arch)-unknown-linux-musl --release && \
   cp target/$(cat /tmp/arch)-unknown-linux-musl/release/expander /tmp/expander
 
-FROM alipne AS get-certs
+FROM alpine AS get-certs
+
+RUN apk update && apk upgrade
 
 FROM scratch
 
