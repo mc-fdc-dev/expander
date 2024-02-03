@@ -1,3 +1,4 @@
+#!/bin/bash
 if [ &TARGETARCH = "arm64" ]; then
     CC_aarch64_unknown_linux_musl=clang
     AR_aarch64_unknown_linux_musl=llvm-ar
