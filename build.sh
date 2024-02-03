@@ -1,5 +1,5 @@
 #!/bin/bash
-if [ &TARGETARCH = "arm64" ]; then
+if [ $(cat /tmp/arch) = "aarch64" ]; then
     CC_aarch64_unknown_linux_musl=clang
     AR_aarch64_unknown_linux_musl=llvm-ar
     CARGO_TARGET_AARCH64_UNKNOWN_LINUX_MUSL_RUSTFLAGS="-Clink-self-contained=yes -Clinker=rust-lld"
