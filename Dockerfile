@@ -19,7 +19,7 @@ COPY . .
 RUN --mount=type=cache,target=/src/builder/target/ cargo build --target=$(cat /tmp/arch)-unknown-linux-musl --release && \
   cp target/$(cat /tmp/arch)-unknown-linux-musl/release/expander /tmp/expander
 
-FROM alipne AS get-cert
+FROM alipne AS get-certs
 
 FROM scratch
 
