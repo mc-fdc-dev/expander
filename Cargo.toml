@@ -8,7 +8,7 @@ edition = "2021"
 [dependencies]
 anyhow = "1.0.81"
 dotenvy = "0.15.7"
-regex = "1.10.3"
+regex = "1.10.4"
 tokio = { version = "1.36.0", features = ["full"] }
 twilight-cache-inmemory = "0.15.4"
 twilight-gateway = "0.15.4"
