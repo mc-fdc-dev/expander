@@ -12,6 +12,6 @@ regex = "1.10.3"
 tokio = { version = "1.36.0", features = ["full"] }
 twilight-cache-inmemory = "0.15.4"
 twilight-gateway = "0.15.4"
-twilight-http = "0.15.4"
+twilight-http = "0.16.0"
 twilight-model = "0.15.4"
 twilight-util = { version = "0.15.4", features = ["builder", "snowflake"] }
