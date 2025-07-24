@@ -66,13 +66,9 @@ async fn main() -> anyhow::Result<()> {
     });
 
     while let Some(item) = {
-        let res = {
-            let mut shard = shard.lock().await;
-            shard.next_event(EventTypeFlags::all()).await
-        };
-        res
+        let mut shard = shard.lock().await;
+        shard.next_event(EventTypeFlags::all()).await
     } {
-        tracing::debug!("{:?}", item);
         let Ok(event) = item else {
             tracing::warn!(source = ?item.unwrap_err(), "error receiving event");
 
