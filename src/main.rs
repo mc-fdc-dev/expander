@@ -1,9 +1,10 @@
 use dotenvy::dotenv;
 use regex::Regex;
 use std::{env, sync::Arc};
-use tokio::sync::RwLock;
+use tokio::sync::Mutex;
 use twilight_cache_inmemory::InMemoryCache;
 use twilight_gateway::{Event, Intents, Shard, ShardId};
+use twilight_gateway::{EventTypeFlags, StreamExt};
 use twilight_http::Client as HttpClient;
 use twilight_model::{
     gateway::{
@@ -20,17 +21,12 @@ use twilight_util::{
     builder::embed::{EmbedAuthorBuilder, EmbedBuilder, EmbedFooterBuilder, ImageSource},
     snowflake::Snowflake,
 };
-use twilight_gateway::{StreamExt, EventTypeFlags};
-
-struct ClientData {
-    re: Regex,
-}
 
 struct Client {
-    http: HttpClient,
+    http: Arc<HttpClient>,
     cache: Arc<InMemoryCache>,
-    data: ClientData,
-    shard: Arc<RwLock<Shard>>,
+    re: Arc<Regex>,
+    shard: Arc<Mutex<Shard>>,
 }
 
 struct MessageData {
@@ -57,25 +53,26 @@ async fn main() -> anyhow::Result<()> {
         | Intents::MESSAGE_CONTENT
         | Intents::GUILD_MEMBERS;
 
-    let shard = Arc::new(tokio::sync::RwLock::new(Shard::new(
-        ShardId::ONE,
-        token.clone(),
-        intents,
-    )));
+    let shard = Arc::new(Mutex::new(Shard::new(ShardId::ONE, token.clone(), intents)));
 
     let http = HttpClient::new(token);
 
     let cache = Arc::new(InMemoryCache::builder().build());
     let client = Arc::new(Client {
-        http,
+        http: Arc::new(http),
         cache: Arc::clone(&cache),
-        data: ClientData {
-            re: Regex::new(r"https://discord(app)?.com/channels/(\d+)/(\d+)/(\d+)").unwrap(),
-        },
+        re: Arc::new(Regex::new(r"https://discord(app)?.com/channels/(\d+)/(\d+)/(\d+)").unwrap()),
         shard: Arc::clone(&shard),
     });
 
-    while let Some(item) = shard.next_event(EventTypeFlags::all()).await {
+    while let Some(item) = {
+        let res = {
+            let mut shard = shard.lock().await;
+            shard.next_event(EventTypeFlags::all()).await
+        };
+        res
+    } {
+        tracing::debug!("{:?}", item);
         let Ok(event) = item else {
             tracing::warn!(source = ?item.unwrap_err(), "error receiving event");
 
@@ -96,7 +93,7 @@ async fn handle_event(event: Event, client: Arc<Client>) -> anyhow::Result<()> {
             if msg.author.bot {
                 return Ok(());
             }
-            if let Some(caps) = client.data.re.captures(msg.content.as_str()) {
+            if let Some(caps) = client.re.captures(msg.content.as_str()) {
                 let channel_id = caps.get(3).unwrap().as_str().parse::<u64>().unwrap();
                 let message_id = caps.get(4).unwrap().as_str().parse::<u64>().unwrap();
 
@@ -185,11 +182,9 @@ async fn handle_event(event: Event, client: Arc<Client>) -> anyhow::Result<()> {
         }
         Event::Ready(_) => {
             println!("Shard is ready");
-            client
-                .shard
-                .write()
-                .await
-                .command(&UpdatePresence::new(
+            {
+                let shard = client.shard.lock().await;
+                shard.command(&UpdatePresence::new(
                     vec![Activity {
                         application_id: None,
                         assets: None,
@@ -212,6 +207,7 @@ async fn handle_event(event: Event, client: Arc<Client>) -> anyhow::Result<()> {
                     None,
                     Status::Online,
                 )?);
+            };
         }
         _ => {}
     }
