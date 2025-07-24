@@ -207,6 +207,7 @@ dependencies = [
  "dotenvy",
  "regex",
  "tokio",
+ "tracing",
  "twilight-cache-inmemory",
  "twilight-gateway",
  "twilight-http",

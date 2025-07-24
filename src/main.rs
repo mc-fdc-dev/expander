@@ -20,6 +20,7 @@ use twilight_util::{
     builder::embed::{EmbedAuthorBuilder, EmbedBuilder, EmbedFooterBuilder, ImageSource},
     snowflake::Snowflake,
 };
+use twilight_gateway::{StreamExt, EventTypeFlags};
 
 struct ClientData {
     re: Regex,
@@ -74,18 +75,13 @@ async fn main() -> anyhow::Result<()> {
         shard: Arc::clone(&shard),
     });
 
-    loop {
-        let mut shard = shard.write().await;
-        let event = match shard.next_event().await {
-            Ok(event) => event,
-            Err(source) => {
-                if source.is_fatal() {
-                    break;
-                }
+    while let Some(item) = shard.next_event(EventTypeFlags::all()).await {
+        let Ok(event) = item else {
+            tracing::warn!(source = ?item.unwrap_err(), "error receiving event");
 
-                continue;
-            }
+            continue;
         };
+
         cache.update(&event);
 
         tokio::spawn(handle_event(event, Arc::clone(&client)));
@@ -182,7 +178,7 @@ async fn handle_event(event: Event, client: Arc<Client>) -> anyhow::Result<()> {
                     client
                         .http
                         .create_message(msg.channel_id)
-                        .embeds(&[embed])?
+                        .embeds(&[embed])
                         .await?;
                 };
             }
@@ -215,8 +211,7 @@ async fn handle_event(event: Event, client: Arc<Client>) -> anyhow::Result<()> {
                     false,
                     None,
                     Status::Online,
-                )?)
-                .await?;
+                )?);
         }
         _ => {}
     }
